@@ -1,0 +1,38 @@
+BOARD_DIR = $(DEFED_DIR)/boards/grinn/liteboard
+
+DEBIAN_RELEASE = jessie
+DEBIAN_ARCH    = armhf
+MULTISTRAP_CONF = $(DEFED_DIR)/multistrap/multistrap-jessie.conf
+DEBIAN_SOURCE  = http://ftp.pl.debian.org/debian/
+DEBIAN_POSTBUILD_SCRIPT = $(BOARD_DIR)/debian-postbuild.sh
+
+
+QEMU_EMULATOR  = /usr/bin/qemu-arm-static 
+
+LINUX_VERSION       = 4.8
+LINUX_ARCH          = arm
+LINUX_PATCHES_DIR   = $(BOARD_DIR)/patches/linux
+LINUX_CONFIG_CUSTOM = $(BOARD_DIR)/linux_defconfig
+LINUX_DTS           = imx6ul-liteboard.dts
+
+UBOOT_VERSION = 2017.01
+UBOOT_CONFIG  = liteboard_defconfig
+UBOOT_ARCH    = arm
+
+ROOTFS_IMAGE_FILE = rootfs.ext4
+
+GENIMAGE_CFG = $(BOARD_DIR)/genimage.cfg
+
+CROSS_COMPILE ?= arm-linux-gnueabihf-
+
+define uboot-install-hook
+	cp $(UBOOT_BUILD_DIR)/u-boot.img $(IMAGES_DIR)
+	cp $(UBOOT_BUILD_DIR)/SPL        $(IMAGES_DIR)
+endef
+
+define linux-install-hook
+	cp $(LINUX_BUILD_DIR)/arch/$(LINUX_ARCH)/boot/zImage  $(IMAGES_DIR)
+	cp $(LINUX_BUILD_DIR)/arch/$(LINUX_ARCH)/boot/dts/$(LINUX_DTB) $(IMAGES_DIR)
+	cd $(LINUX_BUILD_DIR) && sudo make ARCH=$(LINUX_ARCH) CROSS_COMPILE=$(CROSS_COMPILE) INSTALL_MOD_PATH=$(ROOTFS_DIR) modules_install
+	cd $(LINUX_BUILD_DIR) && sudo make ARCH=$(LINUX_ARCH) CROSS_COMPILE=$(CROSS_COMPILE) INSTALL_MOD_PATH=$(ROOTFS_DIR) firmware_install
+endef
